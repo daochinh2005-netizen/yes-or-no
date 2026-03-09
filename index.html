@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<title>Có / Không - mượt & đúng phạm vi</title>
+<style>
+  html,body { height:100%; margin:0; }
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(180deg,#fff,#fdeef6);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    overflow:hidden;
+  }
+
+  h1 { margin:30px 0 10px; color:#333; }
+
+  #stage {
+    width:100vw;
+    height:calc(100vh - 120px);
+    position:relative;
+    overflow:hidden;
+  }
+
+  .option {
+    position:absolute;
+    width:140px;
+    text-align:center;
+    user-select:none;
+    cursor:pointer;
+    pointer-events:auto;
+  }
+
+  .option img {
+    width:100px;
+    height:100px;
+    display:block;
+    margin:0 auto;
+    pointer-events:none;
+  }
+
+  .label {
+    margin-top:6px;
+    font-weight:700;
+    color:#222;
+    font-size:18px;
+  }
+
+  .option { transition: box-shadow .18s ease; }
+  .option:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+
+  #overlay {
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.6);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    z-index:999;
+    visibility:hidden;
+    opacity:0;
+    transition:opacity 0.4s ease;
+  }
+  #overlay.show {
+    visibility:visible;
+    opacity:1;
+  }
+  #overlay img {
+    max-width:80%;
+    max-height:80%;
+    border-radius:12px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.4);
+  }
+</style>
+</head>
+<body>
+
+<h1>Cho tớ làm quen nhé !</h1>
+<div id="stage">
+  <div id="yes" class="option">
+    <img src="https://cdn.mobilecity.vn/mobilecity-vn/images/2024/11/top-meme-meo-cuc-dang-yeu-46.png" alt="oke">
+    <div class="label">oke</div>
+  </div>
+
+  <div id="no" class="option">
+    <img src="https://jbagy.me/wp-content/uploads/2025/04/Hinh-meme-meo-cuoi-deu-2.jpg" alt="không">
+    <div class="label">không</div>
+  </div>
+</div>
+
+
+<div id="overlay">
+  <img src="https://media.giphy.com/media/MDJ9IbxxvDUQM/giphy.gif" alt="Yay!">
+</div>
+
+
+<audio id="bgMusic" src="https://daochinh2005-netizen.github.io/nhacmeme/Nhạc meme lãng mạn ngọt ngào chill chill - romantic sound edit.mp3"></audio>
+
+<script>
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a,b,t) => a + (b-a) * t;
+
+const stage = document.getElementById('stage');
+const yes = document.getElementById('yes');
+const no  = document.getElementById('no');
+const overlay = document.getElementById('overlay');
+const music = document.getElementById('bgMusic');
+
+let stageRect = stage.getBoundingClientRect();
+window.addEventListener('resize', () => {
+  stageRect = stage.getBoundingClientRect();
+  yesPos.x = clamp(yesPos.x, 0, stageRect.width - yes.offsetWidth);
+  yesPos.y = clamp(yesPos.y, 0, stageRect.height - yes.offsetHeight);
+  noPos.x  = clamp(noPos.x,  0, stageRect.width - no.offsetWidth);
+  noPos.y  = clamp(noPos.y,  0, stageRect.height - no.offsetHeight);
+});
+
+function getInitialPos(el, leftPct=0.3, topPx=200) {
+  const st = getComputedStyle(el);
+  let left = parseFloat(st.left);
+  if (isNaN(left)) left = stageRect.width * leftPct;
+  let top = parseFloat(st.top);
+  if (isNaN(top)) top = topPx;
+  return { x: left, y: top };
+}
+
+let yesPos = getInitialPos(yes, 0.28, 160);
+let yesTarget = { x: yesPos.x, y: yesPos.y };
+
+let noPos = getInitialPos(no, 0.6, 160);
+let noTarget = { x: noPos.x, y: noPos.y };
+
+let mouse = { x: stageRect.width/2, y: stageRect.height/2 };
+
+const applyPos = (el, p) => {
+  el.style.left = p.x + 'px';
+  el.style.top  = p.y + 'px';
+};
+applyPos(yes, yesPos);
+applyPos(no, noPos);
+
+const followLerp = 0.03;
+const evadeThreshold = 100;
+const evadeCooldown = 350;
+let lastEvadeAt = 0;
+
+function randomSafePositionAwayFrom(mx, my) {
+  const w = stageRect.width - no.offsetWidth;
+  const h = stageRect.height - no.offsetHeight;
+  for (let i=0;i<12;i++) {
+    const rx = Math.random() * w;
+    const ry = Math.random() * h;
+    const dx = rx + no.offsetWidth/2 - mx;
+    const dy = ry + no.offsetHeight/2 - my;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist > evadeThreshold * 1.1) return { x: rx, y: ry };
+  }
+  return { x: Math.random() * w, y: Math.random() * h };
+}
+
+stage.addEventListener('mousemove', (e) => {
+  const r = stage.getBoundingClientRect();
+  mouse.x = clamp(e.clientX - r.left, 0, stageRect.width);
+  mouse.y = clamp(e.clientY - r.top,  0, stageRect.height);
+});
+
+
+yes.addEventListener('click', () => {
+  overlay.classList.add('show');
+  music.play();
+  setTimeout(() => {
+    overlay.classList.remove('show');
+    music.pause();
+    music.currentTime = 0;
+  }, 30000);
+});
+
+
+no.addEventListener('click', () => alert('cậu làm người yêu tớ nhé ?'));
+
+function animate(){
+  yesTarget.x = mouse.x - yes.offsetWidth/2;
+  yesTarget.y = mouse.y - yes.offsetHeight/2;
+  yesTarget.x = clamp(yesTarget.x, 0, stageRect.width - yes.offsetWidth);
+  yesTarget.y = clamp(yesTarget.y, 0, stageRect.height - yes.offsetHeight);
+
+  yesPos.x = lerp(yesPos.x, yesTarget.x, followLerp);
+  yesPos.y = lerp(yesPos.y, yesTarget.y, followLerp);
+  applyPos(yes, yesPos);
+
+  const noCenterX = noPos.x + no.offsetWidth/2;
+  const noCenterY = noPos.y + no.offsetHeight/2;
+  const dx = mouse.x - noCenterX;
+  const dy = mouse.y - noCenterY;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+
+  if (dist < evadeThreshold) {
+    const now = Date.now();
+    if (now - lastEvadeAt > evadeCooldown) {
+      noTarget = randomSafePositionAwayFrom(mouse.x, mouse.y);
+      lastEvadeAt = now;
+    }
+  }
+  noPos.x = lerp(noPos.x, noTarget.x, 0.18);
+  noPos.y = lerp(noPos.y, noTarget.y, 0.18);
+  noPos.x = clamp(noPos.x, 0, stageRect.width - no.offsetWidth);
+  noPos.y = clamp(noPos.y, 0, stageRect.height - no.offsetHeight);
+  applyPos(no, noPos);
+
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
